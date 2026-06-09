@@ -107,7 +107,7 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
 
 
   //view-project
-  openViewDialog(item: Iproject) {
+  openViewDialog(item: IProject) {
   this.dialog.open(ViewDialogComponent, {
     data: {
       type: 'project',
@@ -118,7 +118,7 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
 }
 
 //delete-project
-openDeleteDialog(item: Iproject) {
+openDeleteDialog(item: IProject) {
   const dialogRef = this.dialog.open(DeleteDialogComponent, {
     width: '500px',
     disableClose: true,
