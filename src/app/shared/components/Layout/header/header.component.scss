@@ -18,6 +18,12 @@
   width: 350px;
 }
 
+.active {
+  background: var(--nav-active);
+  color: var(--primary-color);
+  opacity: .9;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -58,6 +64,7 @@
   align-items: center;
   gap: 4px;
 }
+
 :host ::ng-deep .mat-mdc-icon-button .mat-icon {
   color: var(--primary-color);
 }

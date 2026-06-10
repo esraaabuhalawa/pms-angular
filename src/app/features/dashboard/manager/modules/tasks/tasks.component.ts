@@ -9,13 +9,16 @@ import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { IResponse, ITask } from '../interfaces/manger.interface';
-import { ManagerService } from '../services/manager.service';
+
 import { StatusEnum } from 'src/app/core/enums/general.enum';
 import { MatDialog } from '@angular/material/dialog';
-import { ViewDialogComponent } from '../../../../shared/components/view-dialog/view-dialog.component';
-import { DeleteDialogComponent } from '../../../../shared/components/delete-dialog/delete-dialog.component';
+
 import { FormControl } from '@angular/forms';
+import { IResponse, ITask } from '../../interfaces/manger.interface';
+import { ManagerService } from '../../services/manager.service';
+import { MatSelectChange } from '@angular/material/select';
+import { DeleteDialogComponent } from 'src/app/shared/components/delete-dialog/delete-dialog.component';
+import { ViewDialogComponent } from 'src/app/shared/components/view-dialog/view-dialog.component';
 type TaskRow = ITask & { numUsers: number };
 
 @Component({
@@ -33,15 +36,7 @@ export class TasksComponent implements AfterViewInit, OnInit {
     'actions',
   ];
   toppings = new FormControl('');
-
-  toppingList: string[] = [
-    'Extra cheese',
-    'Mushroom',
-    'Onion',
-    'Pepperoni',
-    'Sausage',
-    'Tomato',
-  ];
+  toppingList: string[] = ['ToDo', 'InProgress', 'Done'];
   dataSource: MatTableDataSource<ITask> = new MatTableDataSource();
   private searchSubject = new Subject<string>();
   private _managerService = inject(ManagerService);
@@ -54,6 +49,7 @@ export class TasksComponent implements AfterViewInit, OnInit {
   pageNumber: number = 1;
   length: number = 0;
   searchQuery: string = '';
+  selectedStatusFilter: string = '';
   isLoading: boolean = false;
   status = StatusEnum;
 
@@ -105,11 +101,37 @@ export class TasksComponent implements AfterViewInit, OnInit {
 
   ngAfterViewInit() {
     this.dataSource.sort = this.sort;
+    console.log(this.toppings.value);
   }
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    const searchFilter = filterValue.trim().toLowerCase();
+    this.updateDataSourceFilter(searchFilter, this.selectedStatusFilter);
+  }
+
+  applySelectFilter(event: MatSelectChange) {
+    const selectedStatus = event.value || '';
+    this.selectedStatusFilter = selectedStatus;
+    const searchInput = document.querySelector(
+      'input[matInput]',
+    ) as HTMLInputElement;
+    const searchFilter = searchInput?.value.trim().toLowerCase() || '';
+    this.updateDataSourceFilter(searchFilter, selectedStatus);
+  }
+
+  private updateDataSourceFilter(
+    searchFilter: string,
+    statusFilter: string,
+  ): void {
+    this.dataSource.filterPredicate = (item: ITask, filter: string) => {
+      const statusMatch = !statusFilter || item.status === statusFilter;
+      const searchMatch =
+        !searchFilter || item.title.toLowerCase().includes(searchFilter);
+      return statusMatch && searchMatch;
+    };
+
+    this.dataSource.filter = searchFilter + statusFilter;
 
     if (this.paginator) {
       this.paginator.firstPage();
@@ -121,41 +143,17 @@ export class TasksComponent implements AfterViewInit, OnInit {
     this.pageSize = event.pageSize;
     this.fetchData();
   }
-  // من الـ tasks response، استخرجي unique employees per project
-  getNumUsersPerProject(tasks: any[]): Map<number, number> {
-    const projectEmployeeMap = new Map<number, Set<number>>();
 
-    tasks.forEach((task) => {
-      if (task.employee && task.project) {
-        const projectId = task.project.id;
-
-        if (!projectEmployeeMap.has(projectId)) {
-          projectEmployeeMap.set(projectId, new Set());
-        }
-        projectEmployeeMap.get(projectId)!.add(task.employee.id);
-      }
-    });
-
-    // حوّلي لـ Map<projectId, count>
-    const result = new Map<number, number>();
-    projectEmployeeMap.forEach((employeeSet, projectId) => {
-      result.set(projectId, employeeSet.size);
-    });
-
-    return result;
-  }
-
-// view-task
+  // view-task
   openViewTaskDialog(item: ITask) {
-  this.dialog.open(ViewDialogComponent, {
-    data: {
-      type: 'task',
-      item: item
-    },
-    width: '600px'
-  });
-}
-
+    this.dialog.open(ViewDialogComponent, {
+      data: {
+        type: 'task',
+        item: item,
+      },
+      width: '600px',
+    });
+  }
 
 //delete-task
 openDeleteTaskDialog(item: ITask) {
