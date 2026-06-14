@@ -165,12 +165,17 @@ openDeleteTaskDialog(item: ITask) {
     }
   });
 
-  dialogRef.afterClosed().subscribe(result => {
-    if (result) {
-      console.log('Delete task confirmed', item.id);
-
-
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+  this._managerService.deleteTask(item.id).subscribe({
+    next: () => {
+      this.fetchData();
+    },
+    error: (err) => {
+      console.error('Delete task failed', err);
     }
   });
 }
+    });
+  }
 }

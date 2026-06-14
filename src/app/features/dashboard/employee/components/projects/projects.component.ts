@@ -5,15 +5,19 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
+
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
-import { IProject, IResponse } from '../../interfaces/manger.interface';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
-import { ManagerService } from '../../services/manager.service';
-import { MatDialog } from '@angular/material/dialog';
-import { ViewDialogComponent } from '../../../../../shared/components/view-dialog/view-dialog.component';
-import { DeleteDialogComponent } from '../../../../../shared/components/delete-dialog/delete-dialog.component';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import {
+  IResponse,
+  IResponseProjects,
+} from '../../interfaces/employee.interface';
+import { FormControl } from '@angular/forms';
+import { MatSelectChange } from '@angular/material/select';
+import { StatusEnum } from 'src/app/core/enums/general.enum';
+import { EmployeeService } from '../../services/employee.service';
 
 @Component({
   selector: 'app-projects',
@@ -23,15 +27,15 @@ import { DeleteDialogComponent } from '../../../../../shared/components/delete-d
 export class ProjectsComponent implements AfterViewInit, OnInit {
   displayedColumns: string[] = [
     'title',
-    'Statues',
+    'Descraption',
     'Num Tasks',
-    'Date Created',
-    'Actions',
+    'creation Date',
+    'modification Date',
   ];
-  dataSource: MatTableDataSource<IProject> = new MatTableDataSource<IProject>([]);
+
+  dataSource: MatTableDataSource<IResponseProjects> = new MatTableDataSource();
   private searchSubject = new Subject<string>();
-  private _managerService = inject(ManagerService);
-  private dialog = inject(MatDialog);
+  private _EmployeeService = inject(EmployeeService);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -40,7 +44,9 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
   pageNumber: number = 1;
   length: number = 0;
   searchQuery: string = '';
+  selectedStatusFilter: string = '';
   isLoading: boolean = false;
+  status = StatusEnum;
 
   ngOnInit(): void {
     this.configureDataSource();
@@ -55,13 +61,11 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
   }
   fetchData() {
     this.isLoading = true;
-
-    this._managerService
-      .getProjectList(this.pageNumber, this.pageSize)
+    this._EmployeeService
+      .getEmployeeProjects('', this.pageSize, this.pageNumber)
       .subscribe({
-        next: (res: IResponse<IProject>) => {
+        next: (res: IResponse<IResponseProjects>) => {
           this.dataSource.data = res.data;
-
           setTimeout(() => {
             if (this.sort) {
               this.dataSource.sort = this.sort;
@@ -83,18 +87,14 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    const searchFilter = filterValue.trim().toLowerCase();
+    this.dataSource.filter = searchFilter;
 
     if (this.paginator) {
       this.paginator.firstPage();
     }
   }
 
-  onPageChange(event: PageEvent) {
-    this.pageNumber = event.pageIndex + 1;
-    this.pageSize = event.pageSize;
-    this.fetchData();
-  }
   private configureDataSource(): void {
     this.dataSource.sortingDataAccessor = (item, property) => {
       console.log(item, property);
@@ -103,39 +103,9 @@ export class ProjectsComponent implements AfterViewInit, OnInit {
       }
     };
   }
-
-  //view-project
-  openViewDialog(item: IProject) {
-  this.dialog.open(ViewDialogComponent, {
-    data: {
-      type: 'project',
-      item: item
-    },
-    width: '600px'
-  });
-}
-
-  //delete-project
-  openDeleteDialog(item: IProject) {
-    const dialogRef = this.dialog.open(DeleteDialogComponent, {
-      width: '500px',
-      disableClose: true,
-      data: {
-        name: item.title,
-      },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-     if (result) {
-  this._managerService.deleteProject(item.id).subscribe({
-    next: () => {
-      this.fetchData(); // refresh table
-    },
-    error: (err) => {
-      console.error('Delete failed', err);
-    }
-  });
-}
-    });
+  onPageChange(event: PageEvent) {
+    this.pageNumber = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.fetchData();
   }
 }
