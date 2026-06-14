@@ -19,7 +19,7 @@ import { ManagerService } from '../../services/manager.service';
 import { MatSelectChange } from '@angular/material/select';
 import { DeleteDialogComponent } from 'src/app/shared/components/delete-dialog/delete-dialog.component';
 import { ViewDialogComponent } from 'src/app/shared/components/view-dialog/view-dialog.component';
-type TaskRow = ITask & { numUsers: number };
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-tasks',
@@ -37,14 +37,6 @@ export class TasksComponent implements AfterViewInit, OnInit {
   ];
   toppings = new FormControl('');
   toppingList: string[] = ['ToDo', 'InProgress', 'Done'];
-  dataSource: MatTableDataSource<ITask> = new MatTableDataSource();
-  private searchSubject = new Subject<string>();
-  private _managerService = inject(ManagerService);
-  private dialog = inject(MatDialog);
-
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-
   pageSize: number = 10;
   pageNumber: number = 1;
   length: number = 0;
@@ -52,6 +44,14 @@ export class TasksComponent implements AfterViewInit, OnInit {
   selectedStatusFilter: string = '';
   isLoading: boolean = false;
   status = StatusEnum;
+  dataSource: MatTableDataSource<ITask> = new MatTableDataSource();
+  private searchSubject = new Subject<string>();
+  private _managerService = inject(ManagerService);
+  private dialog = inject(MatDialog);
+  private toastr = inject(ToastrService)
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit(): void {
     this.configureDataSource();
@@ -82,7 +82,7 @@ export class TasksComponent implements AfterViewInit, OnInit {
 
     this._managerService.getTasks(this.pageNumber, this.pageSize).subscribe({
       next: (res: IResponse<ITask>) => {
-        console.log('Tasks response:', res.data);
+        //console.log('Tasks response:', res.data);
         this.dataSource.data = res.data;
         setTimeout(() => {
           if (this.sort) {
@@ -155,27 +155,28 @@ export class TasksComponent implements AfterViewInit, OnInit {
     });
   }
 
-//delete-task
-openDeleteTaskDialog(item: ITask) {
-  const dialogRef = this.dialog.open(DeleteDialogComponent, {
-    width: '550px',
-    disableClose: true,
-    data: {
-      name: item.title
-    }
-  });
+  //delete-task
+  openDeleteTaskDialog(item: ITask) {
+    const dialogRef = this.dialog.open(DeleteDialogComponent, {
+      width: '550px',
+      disableClose: true,
+      data: {
+        name: item.title
+      }
+    });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-  this._managerService.deleteTask(item.id).subscribe({
-    next: () => {
-      this.fetchData();
-    },
-    error: (err) => {
-      console.error('Delete task failed', err);
-    }
-  });
-}
+        this._managerService.deleteTask(item.id).subscribe({
+          next: () => {
+            this.toastr.success(`This Item is Delated Successfully`, '!Success' )
+            this.fetchData();
+          },
+          error: (err) => {
+            console.error('Delete task failed', err);
+          }
+        });
+      }
     });
   }
 }
