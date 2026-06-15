@@ -48,7 +48,7 @@ export class TasksComponent implements AfterViewInit, OnInit {
   private searchSubject = new Subject<string>();
   private _managerService = inject(ManagerService);
   private dialog = inject(MatDialog);
-  private toastr = inject(ToastrService)
+  private toastr = inject(ToastrService);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -82,7 +82,6 @@ export class TasksComponent implements AfterViewInit, OnInit {
 
     this._managerService.getTasks(this.pageNumber, this.pageSize).subscribe({
       next: (res: IResponse<ITask>) => {
-        //console.log('Tasks response:', res.data);
         this.dataSource.data = res.data;
         setTimeout(() => {
           if (this.sort) {
@@ -124,6 +123,8 @@ export class TasksComponent implements AfterViewInit, OnInit {
     searchFilter: string,
     statusFilter: string,
   ): void {
+    console.log(searchFilter, statusFilter);
+
     this.dataSource.filterPredicate = (item: ITask, filter: string) => {
       const statusMatch = !statusFilter || item.status === statusFilter;
       const searchMatch =
@@ -161,20 +162,23 @@ export class TasksComponent implements AfterViewInit, OnInit {
       width: '550px',
       disableClose: true,
       data: {
-        name: item.title
-      }
+        name: item.title,
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this._managerService.deleteTask(item.id).subscribe({
           next: () => {
-            this.toastr.success(`This Item is Delated Successfully`, '!Success' )
+            this.toastr.success(
+              `This Item is Delated Successfully`,
+              '!Success',
+            );
             this.fetchData();
           },
           error: (err) => {
             console.error('Delete task failed', err);
-          }
+          },
         });
       }
     });
