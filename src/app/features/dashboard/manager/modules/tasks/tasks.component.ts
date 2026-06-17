@@ -37,13 +37,6 @@ export class TasksComponent implements AfterViewInit, OnInit {
   ];
   toppings = new FormControl('');
   toppingList: string[] = ['ToDo', 'InProgress', 'Done'];
-  pageSize: number = 10;
-  pageNumber: number = 1;
-  length: number = 0;
-  searchQuery: string = '';
-  selectedStatusFilter: string = '';
-  isLoading: boolean = false;
-  status = StatusEnum;
   dataSource: MatTableDataSource<ITask> = new MatTableDataSource();
   private searchSubject = new Subject<string>();
   private _managerService = inject(ManagerService);
@@ -53,6 +46,14 @@ export class TasksComponent implements AfterViewInit, OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  pageSize: number = 10;
+  pageNumber: number = 1;
+  length: number = 0;
+  searchQuery: string = '';
+  selectedStatusFilter: string = '';
+  isLoading: boolean = false;
+  status = StatusEnum;
+  
   ngOnInit(): void {
     this.configureDataSource();
     this.fetchData();
@@ -170,15 +171,12 @@ export class TasksComponent implements AfterViewInit, OnInit {
       if (result) {
         this._managerService.deleteTask(item.id).subscribe({
           next: () => {
-            this.toastr.success(
-              `This Item is Delated Successfully`,
-              '!Success',
-            );
+            this.toastr.success(`Task deleted Successfully`, '!Success' )
             this.fetchData();
           },
           error: (err) => {
-            console.error('Delete task failed', err);
-          },
+            console.error('Delete failed', err);
+          }
         });
       }
     });
