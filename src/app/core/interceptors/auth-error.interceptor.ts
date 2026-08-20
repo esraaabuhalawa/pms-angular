@@ -23,15 +23,6 @@ export class AuthErrorInterceptor implements HttpInterceptor {
 
         return throwError(() => error);
       })
-    // catchError((error: HttpErrorResponse) => {
-
-    //   if (error.status === 401 || error.status === 402) {
-    //     // Clear user data
-    //     this.authService.logout();
-    //   }
-
-    //   return throwError(() => error);
-    // })
   );
   }
 
