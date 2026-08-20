@@ -17,14 +17,38 @@ export class AuthErrorInterceptor implements HttpInterceptor {
 
   return next.handle(request).pipe(
     catchError((error: HttpErrorResponse) => {
+        if (this.isAuthError(error)) {
+          this.authService.logout();
+        }
 
-      if (error.status === 401 || error.status === 402) {
-        // Clear user data
-        this.authService.logout();
-      }
+        return throwError(() => error);
+      })
+    // catchError((error: HttpErrorResponse) => {
 
-      return throwError(() => error);
-    })
+    //   if (error.status === 401 || error.status === 402) {
+    //     // Clear user data
+    //     this.authService.logout();
+    //   }
+
+    //   return throwError(() => error);
+    // })
   );
   }
+
+  private isAuthError(error: HttpErrorResponse): boolean {
+    // Standard auth-failure status codes
+    if (error.status === 401 || error.status === 403) {
+      return true;
+    }
+
+    // Some backends (like this one) return 500 with a JWT error name in the body
+    const errorName = error.error?.additionalInfo?.name ?? error.error?.name;
+    const jwtErrorNames = ['TokenExpiredError', 'JsonWebTokenError', 'NotBeforeError'];
+
+    return jwtErrorNames.includes(errorName);
+  }
+
 }
+
+
+
